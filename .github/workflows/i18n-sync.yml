@@ -1,0 +1,79 @@
+name: Sync Upstream i18n & Update zh-Hant
+
+on:
+  schedule:
+    # 每日 10:00 (Taipei, UTC+8) / 02:00 (UTC) 自動偵測
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-i18n:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configure upstream remote
+        run: |
+          git remote add upstream https://github.com/multica-ai/multica.git || true
+          git fetch upstream main
+
+      - name: Check for upstream locale updates
+        id: upstream_check
+        run: |
+          UPSTREAM_DIFF=$(git diff HEAD upstream/main -- packages/views/locales/en/ packages/views/locales/zh-Hans/ || true)
+          if [ -n "$UPSTREAM_DIFF" ]; then
+            echo "has_diff=true" >> "$GITHUB_OUTPUT"
+            echo "Upstream locale diff detected."
+          else
+            echo "has_diff=false" >> "$GITHUB_OUTPUT"
+            echo "No upstream locale changes detected."
+          fi
+
+      - name: Install sync dependencies
+        run: npm install --no-save opencc-js
+
+      - name: Run i18n synchronization
+        run: node scripts/i18n-sync.cjs
+
+      - name: Verify parity
+        run: |
+          node -e '
+          const fs = require("fs");
+          const path = require("path");
+          const localesDir = path.resolve("packages/views/locales");
+          const enFiles = fs.readdirSync(path.join(localesDir, "en")).filter(f => f.endsWith(".json"));
+          const hantFiles = fs.readdirSync(path.join(localesDir, "zh-Hant")).filter(f => f.endsWith(".json"));
+          if (JSON.stringify(enFiles.sort()) !== JSON.stringify(hantFiles.sort())) {
+            console.error("Namespace count mismatch!");
+            process.exit(1);
+          }
+          console.log("Locale namespaces verified: " + hantFiles.length + " files.");
+          '
+
+      - name: Create Pull Request or commit if changes detected
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore(i18n): sync zh-Hant translations with upstream"
+          title: "自動同步：更新 Multica 繁體中文介面翻譯 (zh-Hant)"
+          body: |
+            ## 自動同步繁體中文介面更新報告
+            
+            偵測到官方 upstream (`multica-ai/multica:main`) 字串有更新或差異，已自動依據在地化術語庫與 OpenCC 規範補齊繁體中文 (`zh-Hant`) 翻譯。
+            
+            - 語系命名空間已與 `en` 100% 雙向對齊。
+            - 包含台灣慣用技術詞彙校正（預設、專案、設定、儲存、執行環境等）。
+          branch: auto-sync-i18n-zh-hant
+          delete-branch: true
