@@ -4,13 +4,14 @@ export { docsHrefForLocale } from "@/lib/docs-href";
 export type Locale = SupportedLocale;
 export type LandingDictionaryLocale = "en" | "zh" | "ko" | "ja";
 
-export const locales: Locale[] = ["en", "zh-Hans", "ko", "ja"];
+export const locales: Locale[] = ["en", "zh-Hans", "zh-Hant", "ko", "ja"];
 
 export const localeLabels: Record<Locale, string> = {
   en: "EN",
-  "zh-Hans": "\u4e2d\u6587",
-  ko: "\ud55c\uad6d\uc5b4",
-  ja: "\u65e5\u672c\u8a9e",
+  "zh-Hans": "简体中文",
+  "zh-Hant": "繁體中文",
+  ko: "한국어",
+  ja: "日本語",
 };
 
 export function toLandingDictionaryLocale(
@@ -18,11 +19,11 @@ export function toLandingDictionaryLocale(
 ): LandingDictionaryLocale {
   if (locale === "ko") return "ko";
   if (locale === "ja") return "ja";
-  return locale === "zh-Hans" ? "zh" : "en";
+  return locale === "zh-Hans" || locale === "zh-Hant" ? "zh" : "en";
 }
 
 export function isZhLocale(locale: Locale): boolean {
-  return locale === "zh-Hans";
+  return locale === "zh-Hans" || locale === "zh-Hant";
 }
 
 type FeatureSection = {

@@ -171,6 +171,21 @@ describe("PreferencesTab — Language switcher", () => {
     expect(mockToastWarning).not.toHaveBeenCalled();
   });
 
+  it("when not logged in: selecting Traditional Chinese persists zh-Hant + reloads, no PATCH", async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    render(<PreferencesTab />, { wrapper: I18nWrapper });
+
+    await pickLanguage(user, "繁體中文");
+
+    expect(mockPersist).toHaveBeenCalledWith("zh-Hant");
+    expect(mockUpdateMe).not.toHaveBeenCalled();
+    expect(mockToastSuccess).toHaveBeenCalledTimes(1);
+    expect(mockReload).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(900));
+    expect(mockReload).toHaveBeenCalledTimes(1);
+    expect(mockToastWarning).not.toHaveBeenCalled();
+  });
+
   it("when logged in + PATCH success: confirms the save before reloading", async () => {
     userRef.current = { id: "user-1" };
     mockUpdateMe.mockResolvedValueOnce({});

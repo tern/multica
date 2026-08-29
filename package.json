@@ -57,6 +57,7 @@
     "@types/node": "catalog:",
     "@types/pg": "^8.20.0",
     "knip": "^6.32.2",
+    "opencc-js": "^1.4.2",
     "pg": "^8.20.0",
     "turbo": "^2.5.4",
     "typescript": "catalog:"

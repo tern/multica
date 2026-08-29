@@ -108,6 +108,10 @@ const labelsByLocale: Record<string, ContextMenuLabels> = {
     openLink: "在浏览器中打开链接",
     copyLinkAddress: "复制链接地址",
   },
+  "zh-Hant": {
+    openLink: "在瀏覽器中開啟連結",
+    copyLinkAddress: "複製連結網址",
+  },
   ja: {
     openLink: "ブラウザでリンクを開く",
     copyLinkAddress: "リンクのアドレスをコピー",
@@ -126,10 +130,10 @@ const labelsByLocale: Record<string, ContextMenuLabels> = {
 // happens.
 function pickLabels(): ContextMenuLabels {
   const preferred = app.getPreferredSystemLanguages()[0]?.toLowerCase() ?? "";
+  if (preferred.startsWith("zh-hant") || preferred.startsWith("zh-tw") || preferred.startsWith("zh-hk") || preferred.startsWith("zh-mo")) {
+    return labelsByLocale["zh-Hant"];
+  }
   if (preferred.startsWith("zh")) {
-    // All Chinese variants get the Simplified copy — Multica only
-    // ships zh-Hans, and zh-Hant users falling through to en would be
-    // worse than reading Simplified Chinese.
     return labelsByLocale["zh-Hans"];
   }
   if (preferred.startsWith("ja")) return labelsByLocale.ja;

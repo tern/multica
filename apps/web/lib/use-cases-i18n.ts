@@ -24,6 +24,15 @@ export const useCaseText: Record<SupportedLocale, UseCaseText> = {
     cardReadMore: "Read →",
     tableOfContents: "On this page",
   },
+  "zh-Hant": {
+    indexTitle: "案例",
+    indexSubtitle: "看看團隊如何使用 Multica 將人員與代理人組織起來協同工作。",
+    indexMetadataTitle: "案例",
+    indexMetadataDescription:
+      "看看團隊如何使用 Multica 將人員與代理人組織起來協同工作。",
+    cardReadMore: "閱讀 →",
+    tableOfContents: "本頁目錄",
+  },
   "zh-Hans": {
     indexTitle: "案例",
     indexSubtitle: "看看团队怎么用 Multica 把人和 agent 一起组织起来。",
