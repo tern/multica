@@ -36,8 +36,8 @@ describe("matchLocale", () => {
     expect(matchLocale(["fr", "de"])).toBe("en");
   });
 
-  it("zh-Hant (traditional) collapses to zh-Hans — same base subtag, better UX than English fallback", () => {
-    expect(matchLocale(["zh-Hant"])).toBe("zh-Hans");
+  it("matches supported zh-Hant directly", () => {
+    expect(matchLocale(["zh-Hant"])).toBe("zh-Hant");
   });
 
   it("uses the first supported candidate when multiple appear", () => {

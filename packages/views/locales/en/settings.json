@@ -113,11 +113,11 @@
     "language": {
       "title": "Language",
       "english": "English",
-      "chinese": "Simplified Chinese",
+      "chinese": "中文",
       "korean": "한국어",
       "japanese": "日本語",
       "sync_failed": "Language saved on this device, but failed to sync to your account. Other devices may show the previous language.",
-      "traditional_chinese": "Traditional Chinese"
+      "traditional_chinese": "繁體中文"
     },
     "timezone": {
       "title": "Viewing Timezone",

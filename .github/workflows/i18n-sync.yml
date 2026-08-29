@@ -1,8 +1,8 @@
-name: Sync Upstream i18n & Update zh-Hant
+name: Sync Upstream i18n
 
 on:
   schedule:
-    # 每日 10:00 (Taipei, UTC+8) / 02:00 (UTC) 自動偵測
+    # Run daily at 02:00 UTC (10:00 AM Taipei)
     - cron: '0 2 * * *'
   workflow_dispatch:
 
@@ -11,7 +11,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  sync-i18n:
+  sync:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -24,56 +24,51 @@ jobs:
         with:
           node-version: 22
 
-      - name: Configure upstream remote
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit and integration tests for sync script
+        run: node scripts/i18n-sync.test.mjs
+
+      - name: Fetch upstream main branch
         run: |
           git remote add upstream https://github.com/multica-ai/multica.git || true
           git fetch upstream main
 
-      - name: Check for upstream locale updates
-        id: upstream_check
-        run: |
-          UPSTREAM_DIFF=$(git diff HEAD upstream/main -- packages/views/locales/en/ packages/views/locales/zh-Hans/ || true)
-          if [ -n "$UPSTREAM_DIFF" ]; then
-            echo "has_diff=true" >> "$GITHUB_OUTPUT"
-            echo "Upstream locale diff detected."
-          else
-            echo "has_diff=false" >> "$GITHUB_OUTPUT"
-            echo "No upstream locale changes detected."
-          fi
+      - name: Synchronize translations from upstream
+        run: node scripts/i18n-sync.mjs --upstream-ref upstream/main
 
-      - name: Install sync dependencies
-        run: npm install --no-save opencc-js
-
-      - name: Run i18n synchronization
-        run: node scripts/i18n-sync.cjs
-
-      - name: Verify parity
+      - name: Verify locale namespace parity
         run: |
           node -e '
-          const fs = require("fs");
-          const path = require("path");
+          import fs from "node:fs";
+          import path from "node:path";
           const localesDir = path.resolve("packages/views/locales");
-          const enFiles = fs.readdirSync(path.join(localesDir, "en")).filter(f => f.endsWith(".json"));
-          const hantFiles = fs.readdirSync(path.join(localesDir, "zh-Hant")).filter(f => f.endsWith(".json"));
-          if (JSON.stringify(enFiles.sort()) !== JSON.stringify(hantFiles.sort())) {
-            console.error("Namespace count mismatch!");
+          const enFiles = fs.readdirSync(path.join(localesDir, "en")).filter(f => f.endsWith(".json")).sort();
+          const hantFiles = fs.readdirSync(path.join(localesDir, "zh-Hant")).filter(f => f.endsWith(".json")).sort();
+          if (JSON.stringify(enFiles) !== JSON.stringify(hantFiles)) {
+            console.error("Mismatch between en and zh-Hant namespaces!");
             process.exit(1);
           }
-          console.log("Locale namespaces verified: " + hantFiles.length + " files.");
+          console.log(`Verified parity for ${hantFiles.length} namespaces.`);
           '
 
-      - name: Create Pull Request or commit if changes detected
+      - name: Create Pull Request if changes detected
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "chore(i18n): sync zh-Hant translations with upstream"
-          title: "自動同步：更新 Multica 繁體中文介面翻譯 (zh-Hant)"
+          title: "chore(i18n): sync zh-Hant translations with upstream"
           body: |
-            ## 自動同步繁體中文介面更新報告
+            ## Upstream i18n Synchronization
             
-            偵測到官方 upstream (`multica-ai/multica:main`) 字串有更新或差異，已自動依據在地化術語庫與 OpenCC 規範補齊繁體中文 (`zh-Hant`) 翻譯。
+            Detected changes in upstream `multica-ai/multica:main` and synchronized `packages/views/locales/zh-Hant/` accordingly.
             
-            - 語系命名空間已與 `en` 100% 雙向對齊。
-            - 包含台灣慣用技術詞彙校正（預設、專案、設定、儲存、執行環境等）。
+            - Synced added, updated, and removed keys
+            - Adhered to glossary standards in `apps/docs/content/docs/developers/conventions.zh.mdx`
+            - Verified 100% namespace parity with `en`
           branch: auto-sync-i18n-zh-hant
           delete-branch: true
